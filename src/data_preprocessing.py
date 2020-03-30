@@ -74,27 +74,52 @@ def add_data_row_from_match(df, df_new, match):
 
 
 def create_input_df(df):
-    p_prefix = ['ht_', 'at_']
-    p_infix = ['total', 'home', 'away']
-    p_suf = ['_wins%', '_draws%', '_loses%']
-    p_suf2 = ['_shots', '_t_shots', '_fouls', '_corners', '_y_cards', '_r_cards']
-
-    columns = ['season', 'jornada', 'division', 'HomeTeam', 'AwayTeam']
-    for pref in p_prefix:
-        for inf in p_infix:
-            for suf in p_suf:
-                if pref[0] == inf[0] or inf[0] == 't':
-                    columns.append(pref + inf + suf)
-
-    for pref in p_prefix:
-        for inf in p_infix:
-            for suf in p_suf2:
-                if pref[0] == inf[0] or inf[0] == 't':
-                    columns.append(pref + inf + suf)
-
+    columns = get_readability_column_labels() + create_wdl_column_labels() + create_statistics_column_labels()
     columns.append('result')
 
     input_df = pd.DataFrame(columns=columns)
     for index, match in df.iterrows():
         add_data_row_from_match(df, input_df, match)
     return input_df
+
+
+def get_readability_column_labels():
+    return ['season', 'jornada', 'division', 'HomeTeam', 'AwayTeam']
+
+
+def create_wdl_column_labels():
+    p_prefix = ['ht_', 'at_']
+    p_infix = ['total', 'home', 'away']
+    p_suf = ['_wins%', '_draws%', '_loses%']
+
+    columns = []
+    for pref in p_prefix:
+        for inf in p_infix:
+            for suf in p_suf:
+                if pref[0] == inf[0] or inf[0] == 't':
+                    columns.append(pref + inf + suf)
+
+    return columns
+
+
+def create_statistics_column_labels():
+    p_prefix = ['ht_', 'at_']
+    p_infix = ['total', 'home', 'away']
+    p_suf2 = ['_shots', '_t_shots', '_fouls', '_corners', '_y_cards', '_r_cards']
+
+    columns = []
+    for pref in p_prefix:
+        for inf in p_infix:
+            for suf in p_suf2:
+                if pref[0] == inf[0] or inf[0] == 't':
+                    columns.append(pref + inf + suf)
+
+    return columns
+
+def normalize_columns(df):
+    result = df.copy()
+    for feature_name in df[create_statistics_column_labels()]:
+        max_value = df[feature_name].max()
+        min_value = df[feature_name].min()
+        result[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
+    return result
